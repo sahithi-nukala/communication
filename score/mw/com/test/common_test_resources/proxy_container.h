@@ -40,13 +40,15 @@ class ProxyContainer
         return *proxy_;
     }
 
-    Proxy Extract()
+    /// \brief Extracts the proxy, leaving the ProxyContainer in a valid but unspecified state.
+    ///
+    /// This function can only be called on an rvalue ProxyContainer, to make it clear that the ProxyContainer should
+    /// not be used after calling Extract()
+    Proxy&& Extract() &&
     {
         SCORE_LANGUAGE_FUTURECPP_ASSERT_PRD_MESSAGE(proxy_ != nullptr,
                                                     "Proxy was not successfully created! Cannot extract it!");
-        auto proxy = std::move(*proxy_);
-        proxy_.reset();
-        return proxy;
+        return std::move(*proxy_);
     }
 
   private:
