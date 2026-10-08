@@ -14,6 +14,10 @@
 
 #include "score/mw/com/impl/bindings/mock_binding/skeleton.h"
 #include "score/mw/com/impl/com_error.h"
+#include "score/mw/com/impl/configuration/service_instance_deployment.h"
+#include "score/mw/com/impl/configuration/service_type_deployment.h"
+#include "score/mw/com/impl/configuration/someip_service_instance_deployment.h"
+#include "score/mw/com/impl/configuration/someip_service_type_deployment.h"
 #include "score/mw/com/impl/i_binding_runtime.h"
 #include "score/mw/com/impl/runtime_mock.h"
 #include "score/mw/com/impl/service_discovery_client_mock.h"
@@ -248,6 +252,44 @@ TEST_F(GenericSkeletonTest, CreateWithInvalidDataTypeMetaInfoSizeFails)
     // Then creation fails with kInvalidConfiguration
     ASSERT_FALSE(result.has_value());
     EXPECT_EQ(result.error(), ComErrc::kInvalidConfiguration);
+}
+
+TEST_F(GenericSkeletonTest, CreateWithMissingEventInConfigurationFails)
+{
+    // Given an identifier and a configured event that does not exist in the deployment metadata
+    auto identifier = dummy_instance_identifier_builder_.CreateValidLolaInstanceIdentifier();
+    const std::string event_name = "missing_event";
+    const std::vector<EventInfo> event_storage = {EventInfo{event_name, DataTypeMetaInfo{16, 8}}};
+
+    GenericSkeletonServiceElementInfo params;
+    params.events = event_storage;
+
+    // When creating the skeleton with the missing event
+    EXPECT_CALL(skeleton_event_binding_factory_mock_, Create(_, _, _, _)).Times(0);
+    auto result = GenericSkeleton::Create(identifier, params);
+
+    // Then creation fails with the expected binding error
+    ASSERT_FALSE(result.has_value());
+    EXPECT_EQ(result.error(), ComErrc::kBindingFailure);
+}
+
+TEST_F(GenericSkeletonTest, CreateWithBlankBindingTypeMissingEventInConfigurationFails)
+{
+    // Given a blank binding type and an event that is not present in the deployment config
+    auto identifier = dummy_instance_identifier_builder_.CreateBlankBindingInstanceIdentifier();
+    const std::string event_name = "missing_event";
+    const std::vector<EventInfo> event_storage = {EventInfo{event_name, DataTypeMetaInfo{16, 8}}};
+
+    GenericSkeletonServiceElementInfo params;
+    params.events = event_storage;
+
+    // When creating the skeleton with the missing event
+    EXPECT_CALL(skeleton_event_binding_factory_mock_, Create(_, _, _, _)).Times(0);
+    auto result = GenericSkeleton::Create(identifier, params);
+
+    // Then creation fails with the expected binding error
+    ASSERT_FALSE(result.has_value());
+    EXPECT_EQ(result.error(), ComErrc::kBindingFailure);
 }
 
 TEST_F(GenericSkeletonTest, CreateWithDuplicateEventNamesFails)
